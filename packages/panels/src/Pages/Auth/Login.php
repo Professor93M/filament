@@ -75,25 +75,35 @@ class Login extends SimplePage
         }
 
         $user = Filament::auth()->user();
-
-        if (
-            ($user instanceof FilamentUser) &&
-            (! $user->canAccessPanel(Filament::getCurrentPanel()))
-        ) {
+        if($user->status == 0){
             Filament::auth()->logout();
-
-            $this->throwFailureValidationException();
+            $this->throwUnactiveAccount();
+        }else{
+            if (
+                ($user instanceof FilamentUser) &&
+                (! $user->canAccessPanel(Filament::getCurrentPanel()))
+            ) {
+                Filament::auth()->logout();
+    
+                $this->throwFailureValidationException();
+            }
+    
+            session()->regenerate();
+    
+            return app(LoginResponse::class);
         }
-
-        session()->regenerate();
-
-        return app(LoginResponse::class);
     }
 
     protected function throwFailureValidationException(): never
     {
         throw ValidationException::withMessages([
             'data.email' => __('filament-panels::pages/auth/login.messages.failed'),
+        ]);
+    }
+    protected function throwUnactiveAccount(): never
+    {
+        throw ValidationException::withMessages([
+            'data.email' => 'حسابك غير مفعل حالياً',
         ]);
     }
 
